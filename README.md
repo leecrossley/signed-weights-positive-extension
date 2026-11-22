@@ -34,6 +34,8 @@ lake build
 python verify_mathlib.py --out verification-local.json
 ```
 
+The Mathlib audit checks the Git revision of the library on Lean’s search path against the paper’s lock file. This also applies when you pass an existing project to `--mathlib-project`.
+
 [Standard library audit](lean/verification.json) · [Mathlib audit](lean/MathlibLibrary/verification.json) · [中文复核说明](lean/README.md)
 
 ## AI assistance

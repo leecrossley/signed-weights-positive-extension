@@ -42,6 +42,8 @@
 
 Mathlib 固定为 d7317655e2826dc1f1de9a0c138db2775c4bb841，版本 v4.13.0。首次下载需要联网，缓存准备好后重复验证可离线进行。已有相同版本 Mathlib 工程和相应缓存时，也可以在子目录运行 python verify_mathlib.py --mathlib-project <已有工程路径>。验证输出如出现 sorryAx 或自定义公理，脚本会报告失败。
 
+使用已有工程时，验证脚本会从 Lean 的搜索路径找到实际使用的 Mathlib，并将其 Git 提交与本论文的锁文件比对。
+
 ## 源码出处
 
 survey/scan.json 记录启发本文的 Alpöge 作者归档指纹与静态索引汇总。survey/scan_source.py 可从同一份源码归档重新统计。该扫描按实际源码换行统计物理行，包括注释与空行。它不执行原库的 Lean 重编译。论文内新证书与原库的计算证明各自独立，可分别核验。
