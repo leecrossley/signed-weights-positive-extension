@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parent
@@ -36,10 +37,26 @@ def main():
     version = subprocess.check_output([lean, "--version"], encoding="utf-8").strip()
     if "version 4.13.0," not in version:
         parser.error("Expected the toolchain pinned in lean-toolchain.")
-    lookup = subprocess.check_output([lake,"env","python","-c",
-        "import os; print(os.environ['LEAN_PATH'])"], cwd=resolved, encoding="utf-8").strip()
-    roots = [str((resolved / p).resolve()) for p in lookup.split(os.pathsep) if p]
-    report = {"lean":version,"mathlib":"d7317655e2826dc1f1de9a0c138db2775c4bb841","modules":{}}
+    lookup = subprocess.check_output(
+        [lake, "env", sys.executable, "-c", "import os; print(os.environ['LEAN_PATH'])"],
+        cwd=resolved, encoding="utf-8",
+    ).strip()
+    roots = [str((resolved / path).resolve()) for path in lookup.split(os.pathsep) if path]
+    module = Path("Mathlib/NumberTheory/DirichletCharacter/Basic.olean")
+    library = next((Path(root) for root in roots if (Path(root) / module).is_file()), None)
+    if library is None:
+        parser.error(f"Could not find {module} in the selected project's Lean search path.")
+    revision = subprocess.run(
+        ["git", "-C", str(library), "rev-parse", "HEAD"], capture_output=True, text=True,
+    )
+    if revision.returncode:
+        parser.error(f"Could not determine the Mathlib Git revision for {library}.")
+    actual = revision.stdout.strip()
+    packages = json.loads((ROOT / "lake-manifest.json").read_text(encoding="utf-8"))["packages"]
+    expected = next(package["rev"] for package in packages if package["name"] == "mathlib")
+    if actual != expected:
+        parser.error(f"The selected Mathlib is at {actual}. This paper uses {expected}.")
+    report = {"lean": version, "mathlib": actual, "modules": {}}
     with TemporaryDirectory(prefix="paper-mathlib-") as temp:
         env = dict(os.environ, LEAN_PATH=os.pathsep.join([temp, *roots]))
         def verify_one(name):
